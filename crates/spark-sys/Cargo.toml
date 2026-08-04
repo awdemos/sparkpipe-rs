@@ -1,0 +1,13 @@
+[package]
+name = "spark-sys"
+description = "Unsafe-containing FFI layer over the sparkpipe C ABI: model driver loading and stage module control."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+spark-abi = { path = "../spark-abi" }
+libc.workspace = true
+libloading.workspace = true
+thiserror.workspace = true

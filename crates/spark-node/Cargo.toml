@@ -1,0 +1,20 @@
+[package]
+name = "spark-node"
+description = "Node runtime: rank daemon, backend pump driving C stage modules via spark-sys."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+spark-abi = { path = "../spark-abi" }
+spark-sys = { path = "../spark-sys" }
+spark-core = { path = "../spark-core" }
+spark-sched = { path = "../spark-sched" }
+spark-serve = { path = "../spark-serve" }
+spark-model = { path = "../spark-model" }
+spark-text = { path = "../spark-text" }
+libc.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true

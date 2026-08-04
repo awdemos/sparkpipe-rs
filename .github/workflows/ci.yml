@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    env:
+      # The C tree must be checked out as a sibling (read-only reference).
+      SPARKPIPE_C_ROOT: ${{ github.workspace }}/sparkpipe
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: sparkpipe-rs
+
+      - name: Checkout sparkpipe C tree (sibling)
+        uses: actions/checkout@v4
+        with:
+          repository: REPLACE-ME/sparkpipe
+          path: sparkpipe
+
+      - name: Install libclang (for bindgen)
+        run: pip install libclang || pipx run pip install --target="$HOME/.local/lib/python3/site-packages" libclang
+
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: fmt
+        run: cargo fmt --all --check
+        working-directory: sparkpipe-rs
+
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+        working-directory: sparkpipe-rs
+
+      - name: test (GPU-free)
+        run: cargo test --workspace
+        working-directory: sparkpipe-rs

@@ -1,0 +1,15 @@
+[package]
+name = "spark-abi"
+description = "Auto-generated #[repr(C)] bindings to the sparkpipe C ABI (stage modules, KV cache, status)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+links = "spark_abi"
+
+[dependencies]
+libc.workspace = true
+
+[build-dependencies]
+bindgen.workspace = true
+clang-sys = { version = "1", features = ["runtime"] }
