@@ -391,3 +391,26 @@ workspace `cargo test --workspace`, clippy `-D warnings`, and fmt all clean.
 3. **Index-based arenas** will replace pointer-heavy intrusive lists in
    `spark-core` (generational handles instead of raw pointers), preserving the
    C ownership semantics (single refcount, sentinels for double-free).
+
+## Packaging for crates.io
+
+- `spark-abi` now vendors the required C ABI headers under
+  `crates/spark-abi/vendor/sparkpipe/`. `build.rs` falls back to the vendored
+  tree when `SPARKPIPE_C_ROOT` / a sibling `../sparkpipe` checkout is absent,
+  and `ensure_libclang()` walks up from `CARGO_MANIFEST_DIR` looking for
+  `sparkpipe-rs-tools/.venv` so the layout probe also works inside
+  `cargo publish --dry-run` extractions.
+- Removed `links = "spark_abi"` from `spark-abi/Cargo.toml`; the crate generates
+  bindings but does not link a native `spark_abi` library.
+- Added `repository` metadata to `[workspace.package]` and every crate.
+- Added `description` to crates that were missing it (`spark-core`,
+  `spark-sched`, `spark-text`).
+- Internal workspace dependencies now declare a version in
+  `[workspace.dependencies]` (with `path`), and each crate uses
+  `crate.workspace = true`. `cargo publish` strips the `path` and resolves the
+  version from the registry.
+- `cargo publish --dry-run` passes for the leaf crates (`spark-abi`,
+  `spark-core`, `spark-model`, `spark-text`). Dependent crates (`spark-sys`,
+  `spark-sched`, `spark-serve`, `spark-node`) cannot dry-run until their
+  internal dependencies exist on crates.io, which is expected; they should be
+  published in dependency order.

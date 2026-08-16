@@ -1,9 +1,11 @@
 [package]
 name = "spark-text"
+description = "Tokenizer adapters and text preprocessing utilities for sparkpipe-rs."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [dependencies]
 serde.workspace = true

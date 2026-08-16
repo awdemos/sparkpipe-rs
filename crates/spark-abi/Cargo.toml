@@ -5,7 +5,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-links = "spark_abi"
+repository.workspace = true
 
 [dependencies]
 libc.workspace = true

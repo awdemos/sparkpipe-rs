@@ -5,15 +5,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [dependencies]
-spark-abi = { path = "../spark-abi" }
-spark-sys = { path = "../spark-sys" }
-spark-core = { path = "../spark-core" }
-spark-sched = { path = "../spark-sched" }
-spark-serve = { path = "../spark-serve" }
-spark-model = { path = "../spark-model" }
-spark-text = { path = "../spark-text" }
+spark-abi.workspace = true
+spark-sys.workspace = true
+spark-core.workspace = true
+spark-sched.workspace = true
+spark-serve.workspace = true
+spark-model.workspace = true
+spark-text.workspace = true
 libc.workspace = true
 thiserror.workspace = true
 serde.workspace = true

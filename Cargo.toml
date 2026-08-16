@@ -16,6 +16,7 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/awdemos/sparkpipe-rs"
 
 # Dependency policy: mirror the C project's minimalism.
 # Only vetted crates; no async runtime outside the gateway.
@@ -26,6 +27,17 @@ thiserror = "2"
 libloading = "0.8"
 libc = "0.2"
 bindgen = "0.72"
+
+# Internal workspace crates. `path` is stripped on publish; `version` is required
+# so that crates.io dependencies resolve correctly.
+spark-abi = { version = "0.1.0", path = "crates/spark-abi" }
+spark-core = { version = "0.1.0", path = "crates/spark-core" }
+spark-model = { version = "0.1.0", path = "crates/spark-model" }
+spark-sched = { version = "0.1.0", path = "crates/spark-sched" }
+spark-sys = { version = "0.1.0", path = "crates/spark-sys" }
+spark-text = { version = "0.1.0", path = "crates/spark-text" }
+spark-serve = { version = "0.1.0", path = "crates/spark-serve" }
+spark-node = { version = "0.1.0", path = "crates/spark-node" }
 
 [profile.release]
 lto = "thin"

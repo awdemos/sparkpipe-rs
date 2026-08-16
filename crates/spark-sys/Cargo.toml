@@ -5,9 +5,10 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [dependencies]
-spark-abi = { path = "../spark-abi" }
+spark-abi.workspace = true
 libc.workspace = true
 libloading.workspace = true
 thiserror.workspace = true

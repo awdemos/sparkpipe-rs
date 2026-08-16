@@ -16,7 +16,12 @@ fn sparkpipe_c_root() -> PathBuf {
     }
     // crates/spark-abi -> crates -> sparkpipe-rs -> code -> sparkpipe
     let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    manifest.join("..").join("..").join("..").join("sparkpipe")
+    let sibling = manifest.join("..").join("..").join("..").join("sparkpipe");
+    if sibling.join("include").is_dir() {
+        return sibling;
+    }
+    // Fall back to vendored headers so the crate builds from crates.io.
+    manifest.join("vendor").join("sparkpipe")
 }
 
 fn ensure_libclang() {
@@ -24,15 +29,32 @@ fn ensure_libclang() {
         return;
     }
     let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    let candidates = [
-        // PyPI libclang wheel in the sibling tools venv.
-        manifest.join("../../../sparkpipe-rs-tools/.venv/lib"),
-        // Common system locations.
+
+    // Walk up from the crate manifest looking for the developer tools venv.
+    // This works both for in-workspace builds and for `cargo publish --dry-run`
+    // extractions inside the workspace target/ directory.
+    let mut tools_venv_dir = None;
+    let mut current = manifest.as_path();
+    while let Some(parent) = current.parent() {
+        let candidate = parent.join("sparkpipe-rs-tools").join(".venv").join("lib");
+        if candidate.is_dir() {
+            tools_venv_dir = Some(candidate);
+            break;
+        }
+        current = parent;
+    }
+
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Some(dir) = tools_venv_dir {
+        candidates.push(dir);
+    }
+    candidates.extend([
         PathBuf::from("/usr/lib64/llvm22/lib"),
         PathBuf::from("/usr/lib64"),
         PathBuf::from("/usr/lib/llvm-18/lib"),
         PathBuf::from("/usr/lib"),
-    ];
+    ]);
+
     for candidate in &candidates {
         let found = find_libclang(candidate);
         if let Some(dir) = found {

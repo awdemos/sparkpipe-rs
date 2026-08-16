@@ -5,11 +5,12 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [dependencies]
-spark-core = { path = "../spark-core" }
-spark-sched = { path = "../spark-sched" }
-spark-text = { path = "../spark-text" }
+spark-core.workspace = true
+spark-sched.workspace = true
+spark-text.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

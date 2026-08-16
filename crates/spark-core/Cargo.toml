@@ -1,9 +1,11 @@
 [package]
 name = "spark-core"
+description = "Core types and errors shared across the sparkpipe-rs workspace."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [dependencies]
 thiserror.workspace = true
