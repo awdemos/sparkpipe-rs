@@ -321,6 +321,64 @@ workspace `cargo test --workspace`, clippy `-D warnings`, and fmt all clean.
 - Parse + geometry pinned by `spark-model` test `k27_authoritative_geometry`.
   Weight download deferred pending disk check (~0.5–1TB).
 
+### `spark-model` typed family views
+- Added `crates/spark-model/src/k27.rs` with typed structs for every k27
+  contract section (`K27Model`, `K27Mla`, `K27Rope`, `K27Moe`,
+  `K27Quantization`, `K27Speculation`, `K27Cache`, `K27Tokens`,
+  `K27Qualification`, `K27MultimodalWrapper`, `K27Sources`).
+- Added `ContractDocument::as_k27() -> Result<K27Contract, ContractError>`
+  with typed missing-section / bad-section errors.
+- Added `ModelFamily` enum in `crates/spark-model/src/family.rs`; currently
+  dispatches `KimiK25ForConditionalGeneration` to `K27`. Other families
+  (glm52, k3, etc.) dispatch here when their typed section views land.
+- Tests: `k27_contract_typed_view` and `k27_family_dispatch` in
+  `crates/spark-model/tests/contracts.rs`.
+
+### `spark-node` contract-driven geometry and backend config
+- Added `crates/spark-node/src/backend/k27_geometry.rs`:
+  `ring_model_geometry(contract: &K27Contract) -> RingModelGeometry`.
+  Derives model dimensions from the contract and deployment defaults from
+  the GLM52 reference host table. Stage count is chosen as the largest
+  divisor of `layer_count` that fits `MAX_STAGE_COUNT`; for k27's 61 layers
+  this yields a single-stage GPU-free plan.
+- Added `crates/spark-node/src/backend/config_from_contract.rs`:
+  `BackendConfig::from_k27_contract`. Maps contract capacities into the
+  backend config; MLA KV cache is represented as a single head of dimension
+  `kv_lora_rank + qk_unrotated_dimension` for the arena stride.
+- Added `crates/spark-node/src/backend/test_support.rs` with the shared
+  `MockRank0NodeContext` and `reference_service_config` helpers.
+- Added integration test `crates/spark-node/tests/k27_full_stack.rs`: loads
+  `k27_authoritative.json`, builds the backend from the contract, and drives
+  a mock rank-0 token through to a `Token` event.
+
+### `spark-sched` stage-count decoupling
+- `StagePlanGeometry` now carries `max_routed_layers_per_stage` (default
+  `MAX_ROUTED_LAYERS_PER_STAGE`). This was required because k27's 60 routed
+  layers in a single-stage plan exceed the GLM52 limit of 8.
+- `RingModelGeometry` carries `max_routed_layers_per_stage` and passes it
+  through to the stage planner.
+- The scheduler no longer hardcodes `spark_count == CURRENT_SPARK_COUNT`;
+  it builds measured/uniform stage plans using the configured
+  `self.spark_count`. The special 13×6 measured exact path is only taken
+  when `spark_count == CURRENT_SPARK_COUNT`.
+- These changes are model-driven deviations from the C tree: the Rust core
+  treats ring size and routed-layer limits as model/cluster config instead
+  of compile-time constants.
+
+### Still deferred
+- Typed per-family section views for glm52/k3/dsv4/qwen36/mimo25.
+- Qualification registries (`must_work_targets.json`,
+  `spark_hardware_questions.json`, `spark_hardware_assumption_bindings.json`)
+  — the envelope is simple JSON and the typed loaders will land with the
+  qualification consumer.
+- Weight/checkpoint download and real CUDA stage-module integration.
+
+### Phase 5 gate status
+- `cargo test --workspace` green (spark-node 58, spark-serve 40, spark-sched
+  58, spark-core 58, spark-text 50, spark-model 10, spark-abi 1, spark-sys 5).
+- `cargo clippy --workspace --all-targets -- -D warnings` clean.
+- `cargo fmt --all -- --check` clean.
+
 ## Known deliberate deviations from the C tree
 
 1. **No GLM52 constants in Rust code.** The C tree leaks `SPARK_GLM52_MODEL_*`

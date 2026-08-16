@@ -445,6 +445,7 @@ pub fn build_scheduler(
         stage_geometry: StagePlanGeometry {
             layer_count: config.geometry.layer_count,
             first_routed_layer: config.geometry.first_routed_layer,
+            max_routed_layers_per_stage: config.geometry.max_routed_layers_per_stage,
         },
         estimated_layer_cost_ns: 0,
         estimated_final_stage_extra_cost_ns: 0,
@@ -513,6 +514,7 @@ impl BackendConfig {
                 host_prefix: "10.10.100.".to_string(),
                 host_index_base: 10,
                 pack_layout: RingPackLayout::default(),
+                max_routed_layers_per_stage: spark_sched::stage_plan::MAX_ROUTED_LAYERS_PER_STAGE,
             },
             context_tokens: 1_048_576,
             kv_block_tokens: 64,

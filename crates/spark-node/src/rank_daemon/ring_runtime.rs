@@ -254,6 +254,10 @@ pub struct RingModelGeometry {
     pub host_index_base: u32,
     /// Pack-file naming layout.
     pub pack_layout: RingPackLayout,
+    /// Per-family routed-layer limit passed to the stage planner. Defaults to
+    /// `spark_sched::stage_plan::MAX_ROUTED_LAYERS_PER_STAGE`; k27 with a
+    /// single-stage GPU-free plan raises it.
+    pub max_routed_layers_per_stage: u32,
 }
 
 impl RingModelGeometry {
@@ -275,6 +279,7 @@ impl RingModelGeometry {
             || self.shape_inputs.total_layer_count != self.layer_count
             || self.shape_inputs.hidden_dimension != self.hidden_dimension
             || self.host_prefix.is_empty()
+            || self.max_routed_layers_per_stage == 0
         {
             return Err(SparkStatus::InvalidArgument);
         }
@@ -564,6 +569,7 @@ pub fn build_fixed_stage_plan(geometry: &RingModelGeometry) -> Result<stage_plan
         &StagePlanGeometry {
             layer_count: geometry.layer_count,
             first_routed_layer: geometry.first_routed_layer,
+            max_routed_layers_per_stage: geometry.max_routed_layers_per_stage,
         },
         &geometry.default_stage_layer_counts,
     )
@@ -983,6 +989,7 @@ mod tests {
             host_prefix: "10.10.100.".to_string(),
             host_index_base: 10,
             pack_layout: RingPackLayout::default(),
+            max_routed_layers_per_stage: stage_plan::MAX_ROUTED_LAYERS_PER_STAGE,
         }
     }
 

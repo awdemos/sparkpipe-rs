@@ -96,6 +96,33 @@ const UNREACHABLE_COST: u64 = u64::MAX / 4;
 pub struct StagePlanGeometry {
     pub layer_count: u32,
     pub first_routed_layer: u32,
+    /// Maximum routed layers a single stage may cover. The GLM52 reference is
+    /// [`MAX_ROUTED_LAYERS_PER_STAGE`]; families with more layers per stage
+    /// (e.g., k27 in a single-rank GPU-free config) may raise it.
+    pub max_routed_layers_per_stage: u32,
+}
+
+impl StagePlanGeometry {
+    /// Create geometry with the GLM52-reference routed-layer limit.
+    pub const fn new(layer_count: u32, first_routed_layer: u32) -> Self {
+        Self {
+            layer_count,
+            first_routed_layer,
+            max_routed_layers_per_stage: MAX_ROUTED_LAYERS_PER_STAGE,
+        }
+    }
+
+    /// Override the routed-layer limit for families that need a larger stage.
+    pub fn with_max_routed_layers_per_stage(mut self, limit: u32) -> Self {
+        self.max_routed_layers_per_stage = limit;
+        self
+    }
+}
+
+impl Default for StagePlanGeometry {
+    fn default() -> Self {
+        Self::new(0, 0)
+    }
 }
 
 /// One pipeline stage's layer range (`SparkStagePlanStage`).
@@ -261,7 +288,7 @@ fn layer_range_is_valid(
         geometry.first_routed_layer,
         geometry.layer_count,
     );
-    routed_layer_count <= MAX_ROUTED_LAYERS_PER_STAGE
+    routed_layer_count <= geometry.max_routed_layers_per_stage
 }
 
 /// `SparkStagePlanAssignStageFlags`.

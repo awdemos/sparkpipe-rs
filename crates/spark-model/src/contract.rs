@@ -11,6 +11,11 @@ use serde::Deserialize;
 use std::path::Path;
 use thiserror::Error;
 
+use crate::k27::{
+    K27Cache, K27Contract, K27Mla, K27Model, K27Moe, K27MultimodalWrapper, K27Qualification,
+    K27Quantization, K27Rope, K27Speculation, K27Tokens,
+};
+
 #[derive(Debug, Error)]
 pub enum ContractError {
     #[error("io error reading {path}: {source}")]
@@ -35,6 +40,23 @@ pub enum ContractError {
 
     #[error("contract {path}: no model geometry found (neither a 'model' section nor flat geometry keys)")]
     MissingGeometry { path: String },
+
+    #[error("contract {path}: missing required section '{section}'")]
+    MissingSection { path: String, section: String },
+
+    #[error("contract {path}: section '{section}' has invalid shape: {source}")]
+    BadSection {
+        path: String,
+        section: String,
+        #[source]
+        source: serde_json::Error,
+    },
+
+    #[error("contract {path}: missing architecture field")]
+    MissingArchitecture { path: String },
+
+    #[error("contract {path}: unsupported architecture '{architecture}'")]
+    UnsupportedArchitecture { path: String, architecture: String },
 }
 
 /// Normalized model geometry, extracted from either the `model` section or
@@ -142,5 +164,63 @@ impl ContractDocument {
         } else {
             None
         }
+    }
+
+    /// Extract a typed Kimi K2.7 contract view.
+    ///
+    /// All required sections (`multimodal_wrapper`, `model`, `mla`, `rope`,
+    /// `moe`, `quantization`, `speculation`, `cache`, `tokens`, `qualification`)
+    /// must be present and well-formed. Optional top-level metadata
+    /// (`schema_version`, `model_id`, `architecture`, `sources`) is preserved
+    /// when present.
+    pub fn as_k27(&self) -> Result<K27Contract, ContractError> {
+        let path = self.model_id.as_deref().unwrap_or("unknown");
+
+        fn take_section<T: serde::de::DeserializeOwned>(
+            raw: &serde_json::Value,
+            path: &str,
+            name: &str,
+        ) -> Result<T, ContractError> {
+            let value = raw.get(name).ok_or_else(|| ContractError::MissingSection {
+                path: path.to_string(),
+                section: name.to_string(),
+            })?;
+            serde_json::from_value(value.clone()).map_err(|source| ContractError::BadSection {
+                path: path.to_string(),
+                section: name.to_string(),
+                source,
+            })
+        }
+
+        Ok(K27Contract {
+            schema_version: self.schema_version,
+            model_id: self.model_id.clone(),
+            architecture: self.architecture.clone(),
+            sources: self
+                .raw
+                .get("sources")
+                .map(|v| serde_json::from_value(v.clone()))
+                .transpose()
+                .map_err(|source| ContractError::BadSection {
+                    path: path.to_string(),
+                    section: "sources".to_string(),
+                    source,
+                })?
+                .unwrap_or_default(),
+            multimodal_wrapper: take_section::<K27MultimodalWrapper>(
+                &self.raw,
+                path,
+                "multimodal_wrapper",
+            )?,
+            model: take_section::<K27Model>(&self.raw, path, "model")?,
+            mla: take_section::<K27Mla>(&self.raw, path, "mla")?,
+            rope: take_section::<K27Rope>(&self.raw, path, "rope")?,
+            moe: take_section::<K27Moe>(&self.raw, path, "moe")?,
+            quantization: take_section::<K27Quantization>(&self.raw, path, "quantization")?,
+            speculation: take_section::<K27Speculation>(&self.raw, path, "speculation")?,
+            cache: take_section::<K27Cache>(&self.raw, path, "cache")?,
+            tokens: take_section::<K27Tokens>(&self.raw, path, "tokens")?,
+            qualification: take_section::<K27Qualification>(&self.raw, path, "qualification")?,
+        })
     }
 }

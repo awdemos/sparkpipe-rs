@@ -8,5 +8,9 @@
 //! added alongside the family that consumes them (k27 first, Phase 5).
 
 pub mod contract;
+pub mod family;
+pub mod k27;
 
 pub use contract::{ContractDocument, ContractError, ModelGeometry};
+pub use family::ModelFamily;
+pub use k27::{K27Contract, K27Mla, K27Model, K27Moe, K27Quantization, K27Rope, K27Tokens};

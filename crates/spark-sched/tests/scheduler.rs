@@ -37,8 +37,7 @@ use spark_sched::stage_plan::{
 };
 
 /// The GLM-5.2 geometry the C test gets from `SPARK_GLM52_MODEL_*`.
-const GLM52_GEOMETRY: StagePlanGeometry =
-    StagePlanGeometry { layer_count: 78, first_routed_layer: 3 };
+const GLM52_GEOMETRY: StagePlanGeometry = StagePlanGeometry::new(78, 3);
 /// `SPARK_GLM52_MODEL_MAX_PREFILL_TOKENS_PER_DISPATCH`.
 const GLM52_DEFAULT_MAX_PREFILL_TOKENS_PER_STEP: u32 = 256;
 /// `SPARK_GLM52_MODEL_MAXIMUM_CONTEXT_TOKENS`.

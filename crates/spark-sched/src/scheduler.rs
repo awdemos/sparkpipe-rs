@@ -657,8 +657,7 @@ impl Scheduler {
     /// `SparkSchedulerInitialize` (validation included).
     pub fn new(configuration: SchedulerConfig) -> Result<Self, SchedulerError> {
         // SparkSchedulerValidateConfiguration.
-        if configuration.spark_count != stage_plan::CURRENT_SPARK_COUNT
-            || configuration.max_batch_bucket != stage_plan::MAX_BATCH_BUCKET
+        if configuration.max_batch_bucket != stage_plan::MAX_BATCH_BUCKET
             || configuration.configuration_flags == 0
             || configuration.configuration_flags & !CONFIGURATION_KNOWN_FLAGS != 0
             || configuration.prefix_cache_block_tokens == 0
@@ -847,15 +846,16 @@ impl Scheduler {
                 &self.stage_geometry,
                 &profile.layer_cost_ns,
                 profile.final_stage_extra_cost_ns,
-                stage_plan::CURRENT_SPARK_COUNT,
+                self.spark_count,
             )?;
             return Ok((plan, profile.layer_cost_ns, profile.final_stage_extra_cost_ns));
         }
-        let plan = stage_plan::build_current_spark_measured_balanced_for_quantization(
+        let plan = stage_plan::build_measured_balanced_for_quantization(
             &self.stage_geometry,
             self.measured_profile_id,
             batch_bucket,
             self.quantization_mode,
+            self.spark_count,
         )?;
         let profile = stage_plan::load_measured_cost_profile_for_quantization(
             &self.stage_geometry,
@@ -1710,18 +1710,18 @@ impl Scheduler {
 
         // The C prefill-batch path uses the measured builders directly (no
         // uniform-estimated fallback, unlike single-request admission).
-        let stage_plan_value =
-            match stage_plan::build_current_spark_measured_balanced_for_quantization(
-                &self.stage_geometry,
-                self.measured_profile_id,
-                batch_bucket,
-                self.quantization_mode,
-            ) {
-                Ok(stage_plan) => stage_plan,
-                Err(status) => {
-                    return Ok(Self::reject_prefill_batch(source_request_count, status.into()))
-                }
-            };
+        let stage_plan_value = match stage_plan::build_measured_balanced_for_quantization(
+            &self.stage_geometry,
+            self.measured_profile_id,
+            batch_bucket,
+            self.quantization_mode,
+            self.spark_count,
+        ) {
+            Ok(stage_plan) => stage_plan,
+            Err(status) => {
+                return Ok(Self::reject_prefill_batch(source_request_count, status.into()))
+            }
+        };
         let profile = match stage_plan::load_measured_cost_profile_for_quantization(
             &self.stage_geometry,
             self.measured_profile_id,

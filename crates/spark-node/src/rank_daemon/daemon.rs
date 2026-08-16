@@ -1836,6 +1836,7 @@ mod tests {
             host_prefix: "10.10.100.".to_string(),
             host_index_base: 10,
             pack_layout: RingPackLayout::default(),
+            max_routed_layers_per_stage: spark_sched::stage_plan::MAX_ROUTED_LAYERS_PER_STAGE,
         }
     }
 

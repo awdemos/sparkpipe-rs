@@ -11,8 +11,7 @@ use spark_sched::stage_plan::{
     STAGE_FLAG_INPUT_HIDDEN, STAGE_FLAG_OUTPUT_HIDDEN,
 };
 
-const GLM52_GEOMETRY: StagePlanGeometry =
-    StagePlanGeometry { layer_count: 78, first_routed_layer: 3 };
+const GLM52_GEOMETRY: StagePlanGeometry = StagePlanGeometry::new(78, 3);
 
 /// `SparkTestGlm52StagePlanMaximumStageCostNs`.
 fn maximum_stage_cost_ns(
