@@ -48,6 +48,7 @@ use spark_serve::serving_engine::engine::{
 use spark_serve::serving_engine::service::{ServiceConfiguration, ServiceRuntime, ServiceStats};
 use spark_serve::serving_engine::ServingStatus;
 use spark_text::tokenizer::Tokenizer;
+use tracing;
 
 use crate::rank_daemon::ring_runtime::{build_rank_plan, QuantizationMode};
 
@@ -80,7 +81,7 @@ impl RingServiceBackend {
         rank0_builder: Option<Box<dyn Rank0NodeContext>>,
     ) -> Result<Self, ServingStatus> {
         backend_config.validate().inspect_err(|&e| {
-            eprintln!("backend config validate failed: {:?}", e);
+            tracing::error!("backend config validate failed: {:?}", e);
         })?;
 
         if (service_configuration.flags & !CONFIGURATION_KNOWN_FLAGS) != 0 {
@@ -104,21 +105,21 @@ impl RingServiceBackend {
             quantization_mode,
         )
         .inspect_err(|&e| {
-            eprintln!("build_rank_plan failed: {:?}", e);
+            tracing::error!("build_rank_plan failed: {:?}", e);
         })?;
 
         let work_control_config = backend_config.work_control_config();
         let arena =
             build_kv_arena(&backend_config, kv_logical_block_capacity).inspect_err(|&e| {
-                eprintln!("build_kv_arena failed: {:?}", e);
+                tracing::error!("build_kv_arena failed: {:?}", e);
             })?;
         let prefix_cache = build_prefix_cache(&backend_config, kv_logical_block_capacity, arena)
             .inspect_err(|&e| {
-                eprintln!("build_prefix_cache failed: {:?}", e);
+                tracing::error!("build_prefix_cache failed: {:?}", e);
             })?;
         let scheduler = build_scheduler(&backend_config, quantization_mode, prefix_cache)
             .inspect_err(|&e| {
-                eprintln!("build_scheduler failed: {:?}", e);
+                tracing::error!("build_scheduler failed: {:?}", e);
             })?;
 
         let mut request_api_configuration = RequestApiConfiguration {
@@ -138,7 +139,7 @@ impl RingServiceBackend {
             .use_async_kv_cache_prefetch_backend(Box::new(NullKvPrefetchBackend))
             .map_err(map_request_api_error)?;
         let request_api = RequestApi::new(request_api_configuration).map_err(|e| {
-            eprintln!("RequestApi::new failed: {:?}", e);
+            tracing::error!("RequestApi::new failed: {:?}", e);
             map_request_api_error(e)
         })?;
 
@@ -234,7 +235,7 @@ impl RingServiceBackend {
             stop_token_ids: backend_config.stop_token_ids.clone(),
         };
         let engine = ServingEngine::new(engine_config).inspect_err(|&e| {
-            eprintln!("ServingEngine::new failed: {:?}", e);
+            tracing::error!("ServingEngine::new failed: {:?}", e);
         })?;
 
         let service = ServiceRuntime::new(ServiceConfiguration {
@@ -247,7 +248,7 @@ impl RingServiceBackend {
             event_ring_capacity: backend_config.event_capacity,
         })
         .inspect_err(|&e| {
-            eprintln!("ServiceRuntime::new failed: {:?}", e);
+            tracing::error!("ServiceRuntime::new failed: {:?}", e);
         })?;
 
         core.borrow_mut().service_runtime_ready = true;
